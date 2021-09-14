@@ -8,12 +8,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 func main(){
 	//testpath()
 	sdk := initSDK()
 	ccp := initCCP(sdk)
+	cc := initCC()
 	//listenBlockEvent(ccp)
 
 	//client, err := event.New(ccp,event.WithBlockEvents())
@@ -24,20 +26,21 @@ func main(){
 	//args := [][]byte{[]byte("A0001"),[]byte("A5001"),[]byte("1")}
 	//
 	//listenTxEvent(client,cc,args)
+	go listenBlockEvent(ccp)
 
 	records := readTestData()
 	var start,end int
 	var i int
-	for i  = 0; i < 21 ; i++{
-		start = i*250
-		end = start + 250
+	for i  = 0; i < 100 ; i++{
+		start = i*100
+		end = start + 100
 		subRecords := records[start:end]
-		invoke(ccp,subRecords)
+		go query(cc,subRecords)
 	}
 
 	//createCC(sdk)
 
-	//time.Sleep(20000000)
+	time.Sleep(100000*time.Second)
 
 	//createChannel(sdk)
 

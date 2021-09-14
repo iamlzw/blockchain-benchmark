@@ -3,9 +3,12 @@ package main
 import (
 	"fmt"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/event"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	packager "github.com/hyperledger/fabric-sdk-go/pkg/fab/ccpackager/gopackager"
 	_ "io/ioutil"
+	"time"
 
 	//"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/resmgmt"
@@ -34,6 +37,19 @@ func initSDK() *fabsdk.FabricSDK {
 		_ = fmt.Errorf("failed to create sdk: %v", err)
 	}
 	return sdk
+}
+
+func initCC() *channel.Client{
+	//// Initialize the SDK with the configuration file
+	configProvider := config.FromFile("config_e2e.yaml")
+	sdk, err := fabsdk.New(configProvider)
+	if err != nil {
+		fmt.Errorf("failed to create sdk: %v", err)
+	}
+	ccp := sdk.ChannelContext("mychannel", fabsdk.WithUser("User1"),fabsdk.WithOrg("Org1"))
+	//ledger.New(ccp)
+	cc, _ := channel.New(ccp)
+	return cc
 }
 
 func initCCP(sdk *fabsdk.FabricSDK) context.ChannelProvider{
@@ -118,32 +134,52 @@ func invoke(ccp context.ChannelProvider,records [][]string ){
 		fmt.Println(resp)
 	}
 }
-//
-//
-//func listenBlockEvent(ccp context.ChannelProvider){
-//	ec,err := event.New(ccp,event.WithBlockEvents())
-//
-//	if err !=nil {
-//		fmt.Errorf("init event client error %s",err)
-//	}
-//
-//	reg, notifier, err :=ec.RegisterBlockEvent()
-//
-//	if err != nil {
-//		fmt.Printf("Failed to register block event: %s", err)
-//		return
-//	}
-//	defer ec.Unregister(reg)
-//
-//	var bEvent *fab.BlockEvent
-//	select {
-//	case bEvent = <-notifier:
-//		fmt.Printf("receive block event %v",bEvent)
-//	case <-time.After(time.Second * 200):
-//		fmt.Printf("Did NOT receive block event\n")
-//	}
-//
-//}
+
+func query(cc *channel.Client,records [][]string ){
+
+	l := len(records)
+	var i int
+	for i = 0 ; i < l ; i++ {
+		_, err := cc.Execute(channel.Request{ChaincodeID: "testchaincode", Fcn: "invoke", Args: [][]byte{[]byte(records[i][0]),[]byte(records[i][1]),[]byte("1")}},
+			channel.WithRetry(retry.DefaultChannelOpts),
+			channel.WithTargetEndpoints(peer1),
+		)
+		if err != nil {
+			fmt.Printf("Failed to query funds: %s\n", err)
+		}
+	}
+}
+
+func listenBlockEvent(ccp context.ChannelProvider){
+	ec,err := event.New(ccp,event.WithBlockEvents())
+
+	if err !=nil {
+		_ = fmt.Errorf("init event client error %s", err)
+	}
+
+	reg, notifier, err :=ec.RegisterBlockEvent()
+
+	if err != nil {
+		fmt.Printf("Failed to register block event: %s", err)
+		return
+	}
+	defer ec.Unregister(reg)
+
+	var bEvent *fab.BlockEvent
+	timeTickerChan := time.Tick(time.Second * 20)
+	count := 0
+	for {
+		select {
+			case bEvent = <-notifier:
+				count += len(bEvent.Block.Data.Data)
+			case <-timeTickerChan:
+				fmt.Println(count/20)
+				count = 0
+		}
+	}
+
+
+}
 //
 //func listenCCEvent(ccp context.ChannelProvider){
 //	ec,err := event.New(ccp,event.WithBlockEvents())
