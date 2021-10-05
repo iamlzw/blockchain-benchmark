@@ -5,7 +5,7 @@ a hyperledger fabric benchmark tool
 
 ### 1、clone git repository
 ```bash
-$ git clone 
+$ git clone git@github.com:iamlzw/blockchain-benchmark.git
 ```
 
 ### configure 
