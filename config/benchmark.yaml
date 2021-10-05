@@ -1,0 +1,8 @@
+invoke:
+  goroutine:
+    count: 100
+    test_case_count: 200
+query:
+  goroutine:
+    count: 100
+    test_case_count: 100

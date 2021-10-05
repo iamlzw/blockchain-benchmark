@@ -25,7 +25,7 @@ client:
   organization: Org1
 
   logging:
-    level: debug
+    level: info
 
   # Global configuration for peer, event service and orderer timeouts
   # if this this section is omitted, then default values will be used (same values as below)
@@ -65,7 +65,7 @@ client:
 
   # Root of the MSP directories with keys and certs.
   cryptoconfig:
-    path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config
+    path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config
 
   # Some SDKs support pluggable KV stores, the properties under "credentialStore"
   # are implementation specific
@@ -156,7 +156,7 @@ organizations:
     mspid: Org1MSP
 
     # This org's MSP store (absolute path or relative to client.cryptoconfig)
-    cryptoPath:  peerOrganizations\org1.example.com\users\{username}@org1.example.com\msp
+    cryptoPath:  peerOrganizations/org1.example.com/users/{username}@org1.example.com/msp
 
     peers:
       - peer0.org1.example.com
@@ -179,7 +179,7 @@ organizations:
     mspid: Org2MSP
 
     # This org's MSP store (absolute path or relative to client.cryptoconfig)
-    cryptoPath:  peerOrganizations\org2.example.com\users\{username}@org2.example.com\msp
+    cryptoPath:  peerOrganizations/org2.example.com/users/{username}@org2.example.com/msp
 
     peers:
       - peer0.org2.example.com
@@ -194,7 +194,7 @@ organizations:
       mspID: OrdererMSP
 
       # Needed to load users crypto keys and certs for this org (absolute path or relative to global crypto path, DEV mode)
-      cryptoPath: ordererOrganizations\example.com\users\{username}@example.com\msp
+      cryptoPath: ordererOrganizations/example.com/users/{username}@example.com/msp
 
 
 #
@@ -224,7 +224,7 @@ orderers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config\ordererOrganizations\example.com\tlsca\tlsca.example.com-cert.pem
+      path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem
 
 #
 # List of peers to send various requests to, including endorsement, query
@@ -251,7 +251,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config\peerOrganizations\org1.example.com\tlsca\tlsca.org1.example.com-cert.pem
+      path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
   peer1.org1.example.com:
     # this URL is used to send endorsement and query requests
@@ -272,7 +272,7 @@ peers:
 
     tlsCACerts:
       # Certificate location absolute path
-      path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config\peerOrganizations\org1.example.com\tlsca\tlsca.org1.example.com-cert.pem
+      path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem
 
 
   peer0.org2.example.com:
@@ -291,7 +291,7 @@ peers:
       allow-insecure: false
 
     tlsCACerts:
-      path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config\peerOrganizations\org2.example.com\tlsca\tlsca.org2.example.com-cert.pem
+      path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
 
   peer1.org2.example.com:
 #    url: peer0.org2.example.com:9051
@@ -309,7 +309,7 @@ peers:
       allow-insecure: false
 
     tlsCACerts:
-      path: D:\workspace\go\src\github.com\lifegoeson\blockchain-benchmark\crypto-config\peerOrganizations\org2.example.com\tlsca\tlsca.org2.example.com-cert.pem
+      path: /home/www/go/src/github.com/lifegoeson/blockchain-benchmark/crypto-config/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem
 
 #
 # Fabric-CA is a special kind of Certificate Authority provided by Hyperledger Fabric which allows

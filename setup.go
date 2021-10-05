@@ -1,11 +1,15 @@
 package main
 
 import (
+	context1 "context"
 	"fmt"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/event"
 	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/context"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	packager "github.com/hyperledger/fabric-sdk-go/pkg/fab/ccpackager/gopackager"
 	_ "io/ioutil"
+	"time"
 
 	//"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/resmgmt"
@@ -15,11 +19,8 @@ import (
 	"github.com/hyperledger/fabric-sdk-go/third_party/github.com/hyperledger/fabric/common/policydsl"
 )
 
-
-var defaultQueryArgs = [][]byte{[]byte("init")}
-
 var defaultInitCCArgs = [][]byte{[]byte("init")}
-
+//var defaultInitCCArgs = [][]byte{[]byte("init")}
 const (
 	peer1 = "peer0.org1.example.com"
 	peer2 = "peer0.org2.example.com"
@@ -28,7 +29,7 @@ const (
 //init the sdk
 func initSDK() *fabsdk.FabricSDK {
 	//// Initialize the SDK with the configuration file
-	configProvider := config.FromFile("config_e2e.yaml")
+	configProvider := config.FromFile("config/config_e2e.yaml")
 	sdk, err := fabsdk.New(configProvider)
 	if err != nil {
 		_ = fmt.Errorf("failed to create sdk: %v", err)
@@ -42,45 +43,48 @@ func initCCP(sdk *fabsdk.FabricSDK) context.ChannelProvider{
 }
 
 func createCC(sdk *fabsdk.FabricSDK) {
-	//prepare context
+
+	ccPkg, err := packager.NewCCPackage("github.com/benchmark", "./chaincode")
+	if err != nil {
+		fmt.Println(err)
+	}
 	adminContext := sdk.Context(fabsdk.WithUser("Admin"), fabsdk.WithOrg("Org1"))
 
 	// Org resource management client
 	orgResMgmt, err := resmgmt.New(adminContext)
 	if err != nil {
-		fmt.Println("Failed to create new resource management client: %s", err)
+		fmt.Printf("Failed to create new resource management client: %s\n", err)
 	}
-	//
-	//fmt.Println(orgResMgmt)
-	//content ,err :=ioutil.ReadFile("cc.tar.gz")
-	//if err !=nil {
-	//	panic(err)
-	//}
-	//
-	//
-	//ccPkg := &resource.CCPackage{Type: pb.ChaincodeSpec_GOLANG, Code: content}
-	ccPkg, err := packager.NewCCPackage("github.com/testchaincode1", "D://WorkSpace/go")
-	if err != nil {
-		fmt.Println(err)
-	}
-	//err = ioutil.WriteFile("cc.tar.gz",ccPkg.Code,0644)
-	//if err != nil{
-	//	fmt.Println("write to file failure:",err)
-	//}
 	// Install example cc to org peers
-	installCCReq := resmgmt.InstallCCRequest{Name: "example098", Path: "github.com/testchaincode1", Version: "0", Package: ccPkg}
+	installCCReq := resmgmt.InstallCCRequest{Name: "benchmark", Path: "github.com/benchmark", Version: "1.0", Package: ccPkg}
 	_, err = orgResMgmt.InstallCC(installCCReq, resmgmt.WithRetry(retry.DefaultResMgmtOpts))
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	adminContextOrg2 := sdk.Context(fabsdk.WithUser("Admin"), fabsdk.WithOrg("Org2"))
+
+	// Org resource management client
+	org2ResMgmt, err := resmgmt.New(adminContextOrg2)
+	if err != nil {
+		fmt.Printf("Failed to create new resource management client: %s\n", err)
+	}
+	// Install example cc to org peers
+	installCCReqOrg2 := resmgmt.InstallCCRequest{Name: "benchmark", Path: "github.com/benchmark", Version: "1.0", Package: ccPkg}
+	_, err = org2ResMgmt.InstallCC(installCCReqOrg2, resmgmt.WithRetry(retry.DefaultResMgmtOpts))
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	// Set up chaincode policy
 	ccPolicy := policydsl.SignedByAnyMember([]string{"Org1MSP"})
 	// Org resource manager will instantiate 'example_cc' on channel
 	resp, err := orgResMgmt.InstantiateCC(
 		"mychannel",
-		resmgmt.InstantiateCCRequest{Name: "example098", Path: "github.com/testchaincode1", Version: "0", Args: defaultInitCCArgs,Policy: ccPolicy},
+		resmgmt.InstantiateCCRequest{Name: "benchmark", Path: "github.com/benchmark", Version: "1.0", Args: defaultInitCCArgs,Policy: ccPolicy},
 		resmgmt.WithRetry(retry.DefaultResMgmtOpts),
 	)
+
 	fmt.Println(resp.TransactionID)
 }
 
@@ -90,60 +94,95 @@ func invokeChaincode(ctx context.ChannelProvider){
 		fmt.Errorf("Failed to create new event client: %s", err)
 	}
 
-
 	args := [][]byte{[]byte("invoke"),[]byte("A0001"),[]byte("A5001"),[]byte("1")}
 	resp,err := cc.Execute(channel.Request{ChaincodeID: "testchaincode", Fcn: "invoke", Args: args},
 		channel.WithRetry(retry.DefaultChannelOpts),
+
 	)
 	if err != nil {
 		fmt.Println("Failed to query funds: %s", err)
 	}
 	fmt.Println(resp)
 }
-func invoke(ccp context.ChannelProvider,records [][]string ){
-	cc,err:= channel.New(ccp)
+func invoke(ccp context.ChannelProvider,records [][]string,ctx context1.Context){
+	//ccp := sdk.ChannelContext("mychannel", fabsdk.WithUser("User1"),fabsdk.WithOrg("Org1"))
+	cc,err := channel.New(ccp)
 	if err != nil {
-		fmt.Errorf("Failed to create new event client: %s", err)
+		fmt.Println(err)
 	}
 	l := len(records)
 	var i int
-	for i = 0 ; i < l ; i++ {
-		args := [][]byte{[]byte(records[i][0]),[]byte(records[i][1]),[]byte("1")}
-		resp,err := cc.Execute(channel.Request{ChaincodeID: "testchaincode", Fcn: "invoke", Args: args},
-			channel.WithRetry(retry.DefaultChannelOpts),
-		)
-		if err != nil {
-			fmt.Println("Failed to query funds: %s", err)
-		}
-		fmt.Println(resp)
+	select {
+		case <-ctx.Done():
+			return
+		default:
+			for ; i < l ; i++ {
+				args := [][]byte{[]byte(records[i][0]),[]byte(records[i][1]),[]byte("1")}
+				_, _ = cc.Execute(channel.Request{ChaincodeID: "benchmark", Fcn: "invoke", Args: args},
+					channel.WithRetry(retry.DefaultChannelOpts),
+					channel.WithTargetEndpoints(peer1),
+				)
+			}
 	}
 }
-//
-//
-//func listenBlockEvent(ccp context.ChannelProvider){
-//	ec,err := event.New(ccp,event.WithBlockEvents())
-//
-//	if err !=nil {
-//		fmt.Errorf("init event client error %s",err)
-//	}
-//
-//	reg, notifier, err :=ec.RegisterBlockEvent()
-//
-//	if err != nil {
-//		fmt.Printf("Failed to register block event: %s", err)
-//		return
-//	}
-//	defer ec.Unregister(reg)
-//
-//	var bEvent *fab.BlockEvent
-//	select {
-//	case bEvent = <-notifier:
-//		fmt.Printf("receive block event %v",bEvent)
-//	case <-time.After(time.Second * 200):
-//		fmt.Printf("Did NOT receive block event\n")
-//	}
-//
-//}
+
+func query(ccp context.ChannelProvider,records [][]string, ch chan int,stopSignal chan bool){
+	//ccp := sdk.ChannelContext("mychannel", fabsdk.WithUser("User1"),fabsdk.WithOrg("Org1"))
+	cc,err := channel.New(ccp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	l := len(records)
+	var i int
+
+	select {
+		case <-stopSignal:
+			return
+		default:
+			for ; i < l ; i++ {
+				args := [][]byte{[]byte(records[i][0])}
+				_,_ = cc.Query(channel.Request{ChaincodeID: "benchmark", Fcn: "query", Args: args},
+					channel.WithRetry(retry.DefaultChannelOpts),
+					channel.WithTargetEndpoints(peer1),
+					channel.WithTimeout(fab.PeerConnection,1*time.Second))
+				ch<-1
+				//fmt.Println(string(resp.Payload))
+			}
+	}
+}
+
+
+func listenBlockEvent1(ccp context.ChannelProvider){
+	ec,err := event.New(ccp,event.WithBlockEvents())
+	if err !=nil {
+		_ = fmt.Errorf("init event client error %s", err)
+	}
+
+	reg, notifier, err :=ec.RegisterBlockEvent()
+
+	if err != nil {
+		fmt.Printf("Failed to register block event: %s", err)
+		return
+	}
+	defer ec.Unregister(reg)
+
+	var bEvent *fab.BlockEvent
+	timeTickerChan := time.Tick(time.Second * 2)
+	count := 0
+	for {
+		select {
+		case bEvent = <-notifier:
+			//fmt.Println(len(bEvent.Block.Data.Data))
+			count += len(bEvent.Block.Data.Data)
+		case <-timeTickerChan:
+			fmt.Println(count/2)
+			count = 0
+		case <-time.After(200*time.Second):
+			return
+		}
+	}
+
+}
 //
 //func listenCCEvent(ccp context.ChannelProvider){
 //	ec,err := event.New(ccp,event.WithBlockEvents())
