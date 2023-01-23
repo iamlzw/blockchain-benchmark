@@ -44,12 +44,12 @@ func main(){
 	sdk := initSDK()
 	//初始化context.ChannelProvider
 	ccp := initCCP(sdk)
-	//RunInvoke(ccp)
+	RunInvoke(ccp)
 	//
-	invokeChaincode(ccp)
-	queryChaincode(ccp)
+	//invokeChaincode(ccp)
+	//queryChaincode(ccp)
 
-	//createCC(sdk)
+	createCC(sdk)
 	//createCCLifecycle()
 
 }
