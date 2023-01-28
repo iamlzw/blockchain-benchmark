@@ -1,7 +1,23 @@
+
+## fabric sdk配置文件路径
+fabric:
+  sdk:
+    config:
+      path: D:\\workspace\\go\\src\\github.com\\lifegoeson\\blockchain-benchmark\\config\\config_e2e.yaml
+
+network:
+  channel:
+    name: mychannel
+  endorser_peers:
+    peer0_org1: peer0_org1
+    peer0_org2: peer0_org2
+  chaincode:
+    invoke_function:
+
 invoke:
   goroutine:
-    count: 300
-    test_case_count: 333
+    count: 1
+    test_case_count: 1
 query:
   goroutine:
     count: 200
