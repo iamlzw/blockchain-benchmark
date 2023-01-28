@@ -8,5 +8,3 @@ require (
 	github.com/hyperledger/fabric-sdk-go v1.0.0
 	github.com/spf13/viper v1.1.1
 )
-
-//replace github.com/hyperledger/fabric-sdk-go v1.0.0 => ../fabric-sdk-go:
