@@ -30,13 +30,13 @@ func main(){
 	sdk := tools.InitSDK()
 	//初始化context.ChannelProvider
 	ccp := tools.InitCCP(sdk)
-
-	tools.CreateCCLifecycle(sdk)
-
-	tools.RunInvoke(ccp)
 	//
-	//invokeChaincode(ccp)
-	//queryChaincode(ccp)
+	//tools.CreateCCLifecycle(sdk)
+	//
+	//tools.RunInvoke(ccp)
+	//
+	tools.InvokeChaincode(ccp)
+	tools.QueryChaincode(ccp)
 	//createCC(sdk)
 
 }
