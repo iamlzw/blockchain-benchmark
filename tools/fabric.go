@@ -74,7 +74,7 @@ func query(ctx context1.Context,ccp context.ChannelProvider,records [][]string, 
 	}
 }
 
-func invokeChaincode(ctx context.ChannelProvider){
+func InvokeChaincode(ctx context.ChannelProvider){
 	cc,err:= channel.New(ctx)
 	if err != nil {
 		fmt.Printf("Failed to create new event client: %s", err)
@@ -92,7 +92,7 @@ func invokeChaincode(ctx context.ChannelProvider){
 	fmt.Println(string(resp.Payload))
 }
 
-func queryChaincode(ctx context.ChannelProvider){
+func QueryChaincode(ctx context.ChannelProvider){
 	cc,err:= channel.New(ctx)
 	if err != nil {
 		fmt.Printf("Failed to create new event client: %s\n", err)
