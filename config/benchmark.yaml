@@ -16,9 +16,9 @@ network:
 
 invoke:
   goroutine:
-    count: 1
-    test_case_count: 1
+    count: 20
+    test_case_count: 2
 query:
   goroutine:
-    count: 200
-    test_case_count: 500
+    count: 20
+    test_case_count: 5

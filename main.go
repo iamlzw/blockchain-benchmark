@@ -14,10 +14,6 @@ type lineObj struct {
 }
 
 func main(){
-	//开启pprof服务
-	//go func() {
-	//	_ = http.ListenAndServe("localhost:6060", nil)
-	//}()
 	//加载性能测试配置文件
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("config/")
@@ -30,14 +26,16 @@ func main(){
 	sdk := tools.InitSDK()
 	//初始化context.ChannelProvider
 	ccp := tools.InitCCP(sdk)
-	//
+	//部署benchmark合约
 	//tools.CreateCCLifecycle(sdk)
-	//
+
+	//invoke 性能测试
 	//tools.RunInvoke(ccp)
-	//
+
+	//query 交易性能测试
+	//tools.RunQuery(ccp)
 	tools.InvokeChaincode(ccp)
 	tools.QueryChaincode(ccp)
 	//createCC(sdk)
-
 }
 

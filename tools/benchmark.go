@@ -20,21 +20,24 @@ func RunInvoke(ccp context.ChannelProvider){
 	//每个协程执行的测试用例的数量
 	invokeTestCaseNums := viper.GetInt("invoke.goroutine.test_case_count")
 
+	//创建一个context,超时时间为10s,用于goroutine间同步
 	ctx3, cancel := ctx.WithTimeout(ctx.Background(), 10*time.Second)
 
 	defer cancel()
 
 	//items1 := make([]opts.LineData, 0)
 
-	var workCounter1 int
+	//成功返回的invoke交易数量
+	var successResponseCount,failureResponseCount int
 
+	//整个测试时常内所有的的交易成功数量,例如10s内的交易数量
 	var count int
 
+	//每隔1s times+1,用于计算tps
 	var times int
 
-	workChan1 := make(chan int,200)
-
-	//go listenBlockEvent(ccp,workChan1)
+	successChan := make(chan int,20)
+	failureChan := make(chan int,10)
 
 	var l sync.Mutex
 
@@ -46,15 +49,20 @@ func RunInvoke(ccp context.ChannelProvider){
 			select {
 			case <-t1.C:
 				l.Lock()
-				//fmt.Println(workCounter1)
-				count += workCounter1
+				//fmt.Println(successResponseCount)
+				//fmt.Println(failureResponseCount)
+				count += successResponseCount
 				times++
-				workCounter1 = 0
-				//items1 = append(items1, opts.LineData{Value: workCounter1,Name: strconv.Itoa(time.Now().Minute())+":"+strconv.Itoa(time.Now().Second())})
+				successResponseCount = 0
+				//items1 = append(items1, opts.LineData{Value: success_response_count,Name: strconv.Itoa(time.Now().Minute())+":"+strconv.Itoa(time.Now().Second())})
 				l.Unlock()
-			case <-workChan1:
+			case <-successChan:
 				l.Lock()
-				workCounter1 += 1
+				successResponseCount += 1
+				l.Unlock()
+			case <-failureChan:
+				l.Lock()
+				failureResponseCount +=1
 				l.Unlock()
 			}
 		}
@@ -64,20 +72,20 @@ func RunInvoke(ccp context.ChannelProvider){
 		start = i * invokeTestCaseNums
 		end = start + invokeTestCaseNums
 		subRecords := records[start:end]
-		go invoke(ccp,subRecords,ctx3,workChan1)
+		go invoke(ccp,subRecords,ctx3,successChan,failureChan)
 	}
 
 	time.Sleep(10* time.Second)
 	t1.Stop()
-	fmt.Println(count)
-	fmt.Println(times)
-	fmt.Println(count/times)
+	//fmt.Println(count)
+	//fmt.Println(times)
+	//fmt.Println(count/times)
 
 	//generateTpsChart(items,"query.html","Hyperledger Fabric Query Transactions Per Second","每秒查询交易数")
 	//generateTpsChart(items1,"invoke.html","Hyperledger Fabric Invoke Transactions Per Five Second","每5秒交易数")
 
 	//defer close(workChan)
-	defer close(workChan1)
+
 }
 
 func RunQuery(ccp context.ChannelProvider){
